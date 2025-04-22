@@ -1,42 +1,41 @@
 const express = require("express");
 const app = express();
-const {adminAuth,userAuth} = require("./middlewares/auth.js")
+const connectDB = require('./config/database.js')
+const User = require('./models/user.js')
 
-//middleware for checking if admin is authenticated
-
-app.use('/admin',adminAuth)
-
-app.get('/user/login',(req,res,next)=>{
-    console.log("dont want to authenticate user login");
-    res.send("user login successful")
+app.get('/home',async(req,res)=>{
+    res.send("hello")
 })
 
-app.get('/user/getData',userAuth,(req, res,next)=>{
-    console.log("user is authenticated and fetching data from client");
-    res.send("Data")
-    next();
+app.post('/signin',async (req,res) => {
+    const user = new User({
+        firstName : 'KKohli',
+        lastName : 'Amaragani',
+        age : 22,
+        emailId : "pv@gmail.com", 
+        password : "hi@123",
+        gender : "male"
+    })
+
+    try{
+        res.send('success')
+
+        await user.save(); 
+    } catch(err){
+        res.status(400).send("failed to send")
+    }
+   
 })
-
-
-app.get('/admin/getData',(req, res,next)=>{
-    console.log("admin is authenticated and fetching data from client");
-    res.send("Data")
-    next();
-})
-
-app.delete('/admin/deleteData',(req, res,next)=>{
-    console.log("Deleting data from client");
-    res.send("data deleted")
-    next();
-})
-
-
-
-
-    
-
-
-app.listen(7777,() => { 
-    console.log(`server is running on port 7777....`)
-})
+connectDB()
+.then(
+    ()=>{
+        console.log("Database Connected Successfully!!!")
+        app.listen(7777,()=>{
+            console.log("Server listening on port 7777!!")
+        })
+    }
+).catch((err)=>{
+    console.log("Something Wrong Happened!!")
+}
+)
 
