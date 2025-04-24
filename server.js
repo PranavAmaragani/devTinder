@@ -3,29 +3,108 @@ const app = express();
 const connectDB = require('./config/database.js')
 const User = require('./models/user.js')
 
+app.use(express.json());
+
 app.get('/home',async(req,res)=>{
     res.send("hello")
 })
 
-app.post('/signin',async (req,res) => {
-    const user = new User({
-        firstName : 'KKohli',
-        lastName : 'Amaragani',
-        age : 22,
-        emailId : "pv@gmail.com", 
-        password : "hi@123",
-        gender : "male"
-    })
+//signup api
+app.post('/signup',async (req,res) => {
+    const user = new User(req.body)
 
     try{
+        await user.save(); 
         res.send('success')
 
-        await user.save(); 
+        
     } catch(err){
-        res.status(400).send("failed to send")
+        if (err.name === "ValidationError") {
+            const messages = Object.values(err.errors).map(e => e.message);
+            return res.status(400).send({ error: messages });
+
+        }
+        else{
+            res.status(400).send("failed to send")
+        }
+        
     }
    
 })
+
+//get user with EmailId
+app.get('/user',async(req,res)=>{
+    const userEmailId = req.body.emailId;
+    // console.log(userEmailId)
+    try {
+        const users = await User.find({emailId : userEmailId});
+        if (users.length===0) {
+            res.status(400).send("No user found with this mailId..")
+        } else {
+            res.send(users)
+        }
+        
+    } catch (err) {
+       res.status(404).send("didn't find the user") 
+    }
+})
+
+//get user with id
+app.get('/userid',async(req,res)=>{
+    const id = req.body.id;
+    console.log(req.body)
+    try {
+        const users = await User.findById(id)
+        res.send(users)
+    } catch (err) {
+    res.status(404).send("user id didnt found");
+}
+}
+)
+
+//get feed  api
+app.get('/feed',async(req,res)=>{
+    try {
+        const feed = await  User.find();
+        res.send(feed)
+    } catch (err) {
+        res.status(404).send("something error happened"); 
+    }
+})
+
+//delete user by id
+
+app.delete('/user',async(req,res)=>{
+    const id = req.body.id;
+    console.log(id)
+    try{
+        const user = await User.findByIdAndDelete({_id:id});
+        res.send("user deleted successfully")
+    }catch(err){
+        res.status(404).send("something wrong happenedd!!")
+    }
+})
+
+//update user 
+
+app.patch('/user',async(req,res)=>{
+    const userId = req.body.id;
+    const updateData = req.body;
+    console.log(updateData)
+    try{
+        const updatedUser = await User.findOneAndUpdate({_id : userId},updateData,{
+            runValidators : true
+        });
+        
+        res.send("updated Successfully");
+    }catch(err){
+        res.status(404).send("something wrong happenedd!!")
+
+    }
+})
+
+
+//connecting to the Database
 connectDB()
 .then(
     ()=>{
